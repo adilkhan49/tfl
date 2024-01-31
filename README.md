@@ -16,7 +16,7 @@ Transport for London needs to be able to ingest IoT and operational data for use
 
 The solution architecture is shown below.
 
-![Architecture Diagram](TfL.jpg)
+![Architecture Diagram](TfL.png?raw=True)
 
 ## Set Up
 
