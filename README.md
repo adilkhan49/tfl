@@ -15,8 +15,9 @@ The objective of this project is to demonstrate some of these patterns in Kafka
 Transport for London needs to be able to ingest IoT and operational data for use in real time dashboards and for offline analysis. 
 
 The solution architecture is shown below.
-
-![Alt text](TfL.png?raw=true "Title")
+<p>
+    <img src="TfL.png"  />
+</p>
 
 ## Set Up
 
@@ -221,14 +222,15 @@ python consume_kafka_to_elasticsearch.py
 
 Set up data views to match station_entries and station_exits. Elastic search prefers denormalised streams.
 
-![Alt text](Kibana.png?raw=true "Title")
+<p>
+    <img src="Kibana.png"  />
+</p>
 
 
-## Userful commands
+## Scratch
 
 ```
 curl localhost:8083/connectors
-```
 
 curl -X DELETE localhost:8083/connectors/elasticsearch-entries-sink
 curl -X DELETE localhost:9200/entries
@@ -249,7 +251,6 @@ curl -X PUT localhost:9200/entries -H 'Content-Type: application/json' -d'
         }
     }         
 }' | json_pp
-
 
 
 curl -X POST http://localhost:8083/connectors -H 'Content-Type: application/json' -d \
@@ -288,9 +289,6 @@ curl -X PUT localhost:9200/entries -H 'Content-Type: application/json' -d'
 }' | json_pp
 
 
-                
-
-
 curl -X PUT localhost:9200/entries -H 'Content-Type: application/json' -d'
 {
 "mappings" : {
@@ -312,7 +310,6 @@ curl -X PUT localhost:9200/entries -H 'Content-Type: application/json' -d'
         }
     }         
 }' | json_pp
-
 
 curl -X POST "localhost:9200/entries/_search?size=0&pretty" -H 'Content-Type: application/json' -d'
 {
