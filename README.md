@@ -15,9 +15,8 @@ The objective of this project is to demonstrate some of these patterns in Kafka
 Transport for London needs to be able to ingest IoT and operational data for use in real time dashboards and for offline analysis. 
 
 The solution architecture is shown below.
-<p>
-    <img src="TfL.png"  />
-</p>
+
+![Architecture Diagram](TfL.jpg)
 
 ## Set Up
 
@@ -222,9 +221,7 @@ python consume_kafka_to_elasticsearch.py
 
 Set up data views to match station_entries and station_exits. Elastic search prefers denormalised streams.
 
-<p>
-    <img src="Kibana.png"  />
-</p>
+![Kibana Dasbhoard](Kibana.png?raw=true)
 
 
 ## Scratch
