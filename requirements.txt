@@ -1,0 +1,6 @@
+confluent-kafka
+flask
+bson
+ksqldb
+faker
+pandas
