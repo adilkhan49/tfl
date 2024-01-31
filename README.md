@@ -1,12 +1,12 @@
-# TfL
+# Transport for London with Kafka
 
 ## Streaming Patterns
 
 Several patterns are common in streaming. In increasing order of maturity these are:
-- Event Sink. Your business is already using streams. These can be ingested straight into your data warehouse to complement existing batch workloads, e.g. Marketing
-- Replication. Replicate data from one place to another. Useful for serving data as a product or creating more fault-tolerant systems.
-- Replication. Your business needs real time analytics for immediate decision making, e.g. Supply Chain & Logistics
-- Microservices. Your business needs to operate in real time and has different services that need to talk to each other, e.g. Fraud Detection
+1. Event Sink. Your business is already using streams. These can be ingested straight into your data warehouse to complement existing batch workloads, e.g. Marketing
+2. Replication. Replicate data from one place to another. Useful for serving data as a product or creating more fault-tolerant systems.
+3. Replication. Your business needs real time analytics for immediate decision making, e.g. Supply Chain & Logistics
+3. Microservices. Your business needs to operate in real time and has different services that need to talk to each other, e.g. Fraud Detection
 
 The objective of this project is to demonstrate some of these patterns in Kafka
 
@@ -20,14 +20,14 @@ The solution architecture is shown below.
 
 ## Set Up
 
-### Step 1 - Download connects
-Download latest connectors, unzip and save under connect-plugins/
+### Step 1 - Download connectors
+Download, unzip and save under connect-plugins/
 
-https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc
-https://www.confluent.io/hub/confluentinc/kafka-connect-elasticsearch
+- https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc
+- https://www.confluent.io/hub/confluentinc/kafka-connect-elasticsearch
 
-Save the MySQL JDBC driver under connect-plugins/kafka-connect-jdbc-10.7.4/jars
-https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar
+Save under `connect-plugins/kafka-connect-jdbc-10.7.4/jars`
+- https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar
 
 ### Step 2 - Start containers
 
@@ -37,11 +37,11 @@ docker compose up --build
 In addition to setting up the Confluent environemnt for Kafka, a mariadb will be spun with dummy stations and users loaded.
 
 
-### Step 3 - Kafka Connect
+### Step 3 - Stream from MariaDB
 
-Kafka Connect will look for drivers under CONNECT_PLUGIN_PATH when starting. 
+Kafka Connect looks for drivers under CONNECT_PLUGIN_PATH
 
-Streaming from mariadb.tfl to Kafka
+Stream from mariadb to Kafka
 
 ```
 curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
@@ -191,7 +191,7 @@ PUT _component_template/barrier_mappings
 }
 ```
 
-Define which index_patterns to match against, as well as defining the indices as time_series
+Define pattern matching and set mode to time-series
 ```
 PUT _index_template/barrier_template
 {
@@ -211,7 +211,9 @@ PUT _index_template/barrier_template
 }
 ```
 
-### Step 8 - Consume into elasticsearch
+### Step 8 - Consume into Elasticsearch
+
+Kafka Connect does have plugins for Elasticsearch but Python is a lot easier.
 
 ```
 python consume_kafka_to_elasticsearch.py
@@ -223,157 +225,7 @@ Set up data views to match station_entries and station_exits. Elastic search pre
 
 ![Kibana Dasbhoard](Kibana.png?raw=true)
 
+## To Do
 
-## Scratch
-
-```
-curl localhost:8083/connectors
-
-curl -X DELETE localhost:8083/connectors/elasticsearch-entries-sink
-curl -X DELETE localhost:9200/entries
-
-
-curl -X PUT localhost:9200/entries -H 'Content-Type: application/json' -d'
-{
-"mappings" : {
-  "properties" : {
-     "data" : {
-        "properties" : {
-             "ts" : {
-                 "type" : "date",
-                 "format" : "yyyy-MM-dd HH:mm"
-            }
-        }
-    }
-        }
-    }         
-}' | json_pp
-
-
-curl -X POST http://localhost:8083/connectors -H 'Content-Type: application/json' -d \
-'{
-  "name": "elasticsearch-entries-sink",
-  "config": {
-    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "tasks.max": "1",
-    "topics": "entries",
-    "key.ignore": "true",
-    "schema.ignore": "true",
-    "connection.url": "http://elastic:9200",
-    "type.name": "_doc",
-    "name": "elasticsearch-entries-sink",
-    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-    "value.converter.schemas.enable": "false"
-  }
-}' | json_pp
-
-curl 'localhost:9200/entries/_search?pretty'
-
-curl 'localhost:9200/stations/_count?pretty'
-curl 'localhost:9200/entries/_search?pretty'
-curl 'localhost:9200/exits/_count?pretty'
-
-
-curl -X PUT localhost:9200/entries -H 'Content-Type: application/json' -d'
-{
-  "mappings": {
-    "properties": {
-      "staion":    { "type": "integer" },  
-      "user":  { "type": "keyword"  }, 
-      "ts":   { "type" : "date", "format" : "yyyy-MM-dd HH:mm"}     
-    }
-  }
-}' | json_pp
-
-
-curl -X PUT localhost:9200/entries -H 'Content-Type: application/json' -d'
-{
-"mappings" : {
-  "properties" : {
-     "data" : {
-        "properties" : {
-             "ts" : {
-                 "type" : "date",
-                 "format" : "yyyy-MM-dd HH:mm"
-            }
-        }
-    },
-    "metadata" : {
-        "properties" : {
-             "station" : { "type" : "text" },
-             "user" : { "type" : "text" }
-                }
-            }
-        }
-    }         
-}' | json_pp
-
-curl -X POST "localhost:9200/entries/_search?size=0&pretty" -H 'Content-Type: application/json' -d'
-{
-  "aggs" : {
-    "types_count" : { "value_count" : { "field" : "type" } }
-  }
-}
-'
-
-
-curl -X POST http://localhost:8083/connectors -H 'Content-Type: application/json' -d \
-'{
-  "name": "elasticsearch-entries5-sink",
-  "config": {
-    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "tasks.max": "1",
-    "topics": "entries",
-    "key.ignore": "true",
-    "schema.ignore": "true",
-    "connection.url": "http://elastic:9200",
-    "type.name": "_doc",
-    "name": "elasticsearch-entries-sink",
-    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-    "value.converter.schemas.enable": "false"
-  }
-}' | json_pp
-
-
-curl -X PUT curl -X POST "localhost:9200//_index_template/metrics-laptop -H 'Content-Type: application/json' -d \
-'{
-  "index_patterns": [
-    "metrics-laptop-*"
-  ],
-  "data_stream": {},
-  "priority": 200,
-  "template": {
-    "settings": {
-      "index.mode": "time_series"
-    },
-    "mappings": {
-      "properties": {
-        "host.name": {
-          "type": "keyword",
-          "time_series_dimension": true
-        },
-        "packages.sent": {
-          "type": "integer",
-          "time_series_metric": "counter"
-        },
-        "memory.usage": {
-          "type": "double",
-          "time_series_metric": "gauge"
-        }
-      }
-    }
-  }
-}'
-
-
-curl -X GET "localhost:9200/entries/_search?pretty" -H 'Content-Type: application/json' -d'
-{
-  "aggs": {
-    "my-agg-name": {
-      "terms": {
-        "field": "my-field"
-      }
-    }
-  }
-}
-'
+1. Set up Kafka Schema Registry
+2. Stream into PostreSQL
